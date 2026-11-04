@@ -1,0 +1,30 @@
+# Schneider Electric PowerLogic PM5000 series (PM51xx / PM53xx / PM55xx), basic instantaneous values only
+# Source: Schneider Electric "PM5100_PM5300 Register List" (official, xls download):
+#   https://www.se.com/uk/en/download/document/PM5100-PM5300_PublicRegisterList/
+#   https://www.se.com/us/en/faqs/FA234017/
+# Register numbers 3000/3028/3060/3110 confirmed in public integrator docs that cite the same list:
+#   https://dox.packetpower.com/support/current/schneider-power-meters
+#   https://modbusmanager.com/schneider-powerlogic-pm5000-modbus.html
+# Schneider documents 1-based register numbers -> the PDU address is register - 1 (3000 -> 2999).
+# FLOAT32, big-endian, holding registers (FC03). Energy registers (INT64) vary by model and are intentionally omitted.
+manufacturer: Schneider Electric
+model: PowerLogic PM5xxx (basic)
+source: https://www.se.com/uk/en/download/document/PM5100-PM5300_PublicRegisterList/
+defaults: {function: holding, data_type: float32, word_order: big}
+points:
+  current_a:            {register: 2999, unit: A,    name: Current A}             # 3000
+  current_b:            {register: 3001, unit: A,    name: Current B}             # 3002
+  current_c:            {register: 3003, unit: A,    name: Current C}             # 3004
+  current_avg:          {register: 3009, unit: A,    name: Current average}       # 3010
+  voltage_ab:           {register: 3019, unit: V,    name: Voltage A-B}           # 3020
+  voltage_bc:           {register: 3021, unit: V,    name: Voltage B-C}           # 3022
+  voltage_ca:           {register: 3023, unit: V,    name: Voltage C-A}           # 3024
+  voltage_ll_avg:       {register: 3025, unit: V,    name: Voltage L-L average}   # 3026
+  voltage_an:           {register: 3027, unit: V,    name: Voltage A-N}           # 3028
+  voltage_bn:           {register: 3029, unit: V,    name: Voltage B-N}           # 3030
+  voltage_cn:           {register: 3031, unit: V,    name: Voltage C-N}           # 3032
+  active_power_total:   {register: 3059, unit: kW,   name: Active power total}    # 3060
+  reactive_power_total: {register: 3067, unit: kVAR, name: Reactive power total}  # 3068
+  apparent_power_total: {register: 3075, unit: kVA,  name: Apparent power total}  # 3076
+  frequency:            {register: 3109, unit: Hz,   name: Frequency}             # 3110
+# Power factor (3084) is omitted on purpose: Schneider encodes it in a 4-quadrant format that needs special decoding.

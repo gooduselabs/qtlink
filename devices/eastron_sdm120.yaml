@@ -1,0 +1,21 @@
+# Eastron SDM120 single-phase energy meter (SDM120-Modbus / SDM120CT-Modbus)
+# Source: Eastron SDM120 Modbus Smart Meter Modbus Protocol Implementation V2.4, table "Function code 04 to read input parameters"
+#   https://www.eastroneurope.com/images/uploads/products/protocol/SDM120-MODBUS_Protocol.pdf
+# Addresses below are 0-based PDU addresses (manual register 30001 -> 0). All values: 32-bit IEEE float, high word first, FC04.
+# Default serial settings depend on the meter setup (check the display); verify on your unit before relying on it.
+manufacturer: Eastron
+model: SDM120
+source: https://www.eastroneurope.com/images/uploads/products/protocol/SDM120-MODBUS_Protocol.pdf
+defaults: {function: input, data_type: float32, word_order: big}
+points:
+  voltage:              {register: 0x0000, unit: V,     name: Voltage}                # 30001
+  current:              {register: 0x0006, unit: A,     name: Current}                # 30007
+  active_power:         {register: 0x000C, unit: W,     name: Active power}           # 30013
+  apparent_power:       {register: 0x0012, unit: VA,    name: Apparent power}         # 30019
+  reactive_power:       {register: 0x0018, unit: VAr,   name: Reactive power}         # 30025
+  power_factor:         {register: 0x001E, unit: "-",   name: Power factor}           # 30031
+  frequency:            {register: 0x0046, unit: Hz,    name: Frequency}              # 30071
+  import_active_energy: {register: 0x0048, unit: kWh,   name: Import active energy}   # 30073
+  export_active_energy: {register: 0x004A, unit: kWh,   name: Export active energy}   # 30075
+  total_active_energy:  {register: 0x0156, unit: kWh,   name: Total active energy}    # 30343
+  total_reactive_energy: {register: 0x0158, unit: kvarh, name: Total reactive energy} # 30345

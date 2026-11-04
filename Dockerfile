@@ -3,7 +3,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY qtlink ./qtlink
-COPY config.demo.yaml config.example.yaml ./
-ENV TZ=Asia/Ho_Chi_Minh
+COPY devices ./devices
+COPY config.demo.yaml config.demo.vi.yaml config.example.yaml config.example.tt10.yaml ./
+ENV TZ=UTC
 EXPOSE 8080
 CMD ["python", "-m", "qtlink", "run", "-c", "/app/config/config.yaml"]

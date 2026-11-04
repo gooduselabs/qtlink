@@ -2,3 +2,4 @@
 pytest
 httpx
 playwright
+amqtt>=0.11

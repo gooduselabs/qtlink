@@ -1,54 +1,63 @@
-# QTLink - cấu hình (sửa theo trạm thật) (bộ mô phỏng + máy chủ FTP/sFTP cục bộ)
+# QTLink - production example: energy meters -> MQTT + InfluxDB + HTTP, with store-and-forward.
+# Copy to config.yaml and edit. Vietnam TT10/2021 example: config.example.tt10.yaml
 station:
-  province: BN        # Bảng 33 Phụ lục XV (mã tỉnh) - xác nhận với Sở sau sáp nhập 2025
-  facility: GULB      # TenCoSo: 4 ký tự, không dấu
-  station: NUOXA1     # TenTram: 6 ký tự, NUO (nước)/KHI (khí) + 3 ký tự
-  name: "Trạm nước thải sau xử lý - (sửa theo trạm thật)"
+  station: SITE01               # station / site id used in file names, topics and tags
+  name: "Plant A - Main switchboard"
 logger:
   poll_seconds: 10
-  file_interval_minutes: 5
-  aggregate: avg                # avg | last  (TT10 không quy định cách lấy giá trị 5 phút)
-  decimals: 2
-  newline: crlf                 # crlf | lf (chưa quy định)
-  retention_days: 60            # TT10: lưu tối thiểu 60 ngày
-  upload_seconds: 10
+  file_interval_minutes: 5      # aggregation window = one queued item per sink
+  aggregate: avg                # avg | last
+  decimals: 3
+  retention_days: 60            # local store-and-forward retention
+  upload_seconds: 30
   disconnect_warn_hours: 12
   outbox_dir: data/outbox
   db_path: data/qtlink.db
-  strict_names: true
+  language: en
 devices:
-  - name: analyzer1
-    type: tcp                   # tcp | rtu
-    host: 127.0.0.1   # SỬA
-    port: 5020
+  - name: main
+    template: eastron_sdm630    # devices/eastron_sdm630.yaml
+    type: rtu
+    serial_port: /dev/ttyUSB0
+    baudrate: 9600
+    parity: N
     unit_id: 1
-  # - name: rtu1
-  #   type: rtu
-  #   serial_port: COM3         # Linux: /dev/ttyUSB0
-  #   baudrate: 9600
-  #   parity: N
-  #   unit_id: 2
-tags:   # param/unit theo Bảng 34 Phụ lục XV
-  - {param: pH,   name: "pH",        unit: "-",    device: analyzer1, register: 0,  data_type: float32, low: 5.5, high: 9}
-  - {param: Temp, name: "Nhiệt độ",  unit: "oC",   device: analyzer1, register: 2,  data_type: float32, high: 40}
-  - {param: TSS,  name: "TSS",       unit: "mg/L", device: analyzer1, register: 4,  data_type: float32, high: 100}
-  - {param: COD,  name: "COD",       unit: "mg/L", device: analyzer1, register: 6,  data_type: float32, high: 75, status_register: 100}
-  - {param: NH4+, name: "Amoni",     unit: "mg/L", device: analyzer1, register: 8,  data_type: float32, high: 10}
-  - {param: Flow out 1, name: "Lưu lượng ra", unit: "m3/h", device: analyzer1, register: 10, data_type: float32}
-destinations:
-  - name: SoTNMT-sFTP
-    protocol: sftp              # ftp | ftps | sftp
-    host: 127.0.0.1   # SỬA
-    port: 2222
-    username: demo
-    password_env: QTLINK_SFTP_PASS
-    remote_root: ""
-    station_folder: NUOXA1      # thư mục TramA/yyyy/mm/dd
-  - name: Backup-FTP
-    protocol: ftp
-    host: 127.0.0.1   # SỬA
-    port: 2121
-    username: demo
-    password_env: QTLINK_FTP_PASS
-    remote_root: ""
-    station_folder: NUOXA1
+    points: [voltage_l1, voltage_l2, voltage_l3, total_active_power, frequency, import_active_energy]
+  - name: pv
+    template: sunspec_inverter_103
+    type: tcp
+    host: 192.168.1.50
+    unit_id: 1
+tags:
+  - {param: pv_power, device: pv, point: ac_power}
+  - {param: pv_hz,    device: pv, point: frequency, low: 49.5, high: 50.5}
+sinks:
+  - name: broker
+    protocol: mqtt
+    format: json
+    host: mqtt.example.com
+    port: 8883
+    tls: true
+    username: qtlink
+    password_env: QTLINK_MQTT_PASS
+    topic: "factory/{station}/energy"
+    qos: 1
+  - name: influx
+    protocol: influxdb          # line protocol over HTTP (v2 API; use db: for 1.x)
+    url: https://influx.example.com
+    org: my-org
+    bucket: energy
+    token_env: INFLUX_TOKEN
+  - name: webhook
+    protocol: http
+    format: json
+    url: https://example.com/api/qtlink
+    token_env: QTLINK_WEBHOOK_TOKEN
+  - name: archive
+    protocol: sftp
+    format: csv
+    host: files.example.com
+    username: qtlink
+    key_file: /etc/qtlink/id_rsa
+    remote_root: /upload
+    station_folder: SITE01

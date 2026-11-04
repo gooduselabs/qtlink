@@ -75,4 +75,8 @@ def _read_raw(client, dev, address: int, count: int, function: str) -> list[int]
 def _read_tag(client, dev, tag) -> float:
     dt = tag.get("data_type", "float32")
     regs = _read_raw(client, dev, tag["register"], REG_COUNT[dt], tag.get("function", "holding"))
-    return scale(decode(regs, dt, tag.get("word_order", "big")), tag)
+    v = scale(decode(regs, dt, tag.get("word_order", "big")), tag)
+    if "scale_register" in tag:  # SunSpec-style scale factor: value * 10**int16(sf)
+        sf = decode(_read_raw(client, dev, tag["scale_register"], 1, tag.get("function", "holding")), "int16")
+        v *= 10 ** sf
+    return v

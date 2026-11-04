@@ -1,21 +1,21 @@
-# Demo: docker compose --profile demo up   |   Thực tế: docker compose up qtlink
+# Demo: docker compose --profile demo up   |   Production: docker compose up qtlink
 services:
   qtlink:
     build: .
     restart: unless-stopped
     ports: ["8080:8080"]
     environment:
-      TZ: Asia/Ho_Chi_Minh            # TT10: đồng bộ giờ GMT+7
+      TZ: ${TZ:-UTC}                  # TT10 profile (Vietnam): TZ=Asia/Ho_Chi_Minh
       QTLINK_SFTP_PASS: ${QTLINK_SFTP_PASS:-}
       QTLINK_FTP_PASS: ${QTLINK_FTP_PASS:-}
     volumes:
       - ./config.yaml:/app/config/config.yaml
       - ./data:/app/data
-    # Modbus RTU: thêm  devices: ["/dev/ttyUSB0:/dev/ttyUSB0"]
+    # Modbus RTU: add  devices: ["/dev/ttyUSB0:/dev/ttyUSB0"]
   demo:
     profiles: ["demo"]
     build: .
     ports: ["8080:8080"]
-    environment: {TZ: Asia/Ho_Chi_Minh}
+    environment: {TZ: "${TZ:-UTC}"}
     volumes: ["./data:/app/data"]
     command: ["python", "-m", "qtlink", "demo", "-c", "/app/config.demo.yaml"]

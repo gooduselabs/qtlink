@@ -1,0 +1,25 @@
+# Generic SunSpec inverter subset: Common model (1) at base 40000 followed directly by
+# Inverter model 103 (three-phase, integer + scale factor). This is the common layout
+# (e.g. Fronius Datamanager / GEN24 in "int + SF" mode). Other vendors may use a different
+# base (0 or 50000) or put other models first: verify 'SunS' at wire address 40000 and model ID 103 at wire address 40069.
+# Sources:
+#   SunSpec Alliance Information Model (model 1 / model 103 point definitions): https://sunspec.org/sunspec-modbus-specifications/
+#   Fronius "Datamanager Register Map: Integer Inverter Model (101, 102, 103)":
+#     https://www.forum-fronius.pl/wp-content/uploads/asgarosforum/2812/Inverter_register_map.pdf
+#   Fronius GEN24 int+SF register list (wire addresses): https://easymodbus.com/modbus-register-maps/fronius/gen24-sunspec-int-sf
+# Fronius docs number registers 1-based (40072 = A); PDU address = register - 1.
+# Values are raw * 10^SF where SF is the int16 at 'scale_register'.
+manufacturer: SunSpec (generic)
+model: Inverter model 103 (int+SF), base 40000
+source: https://www.forum-fronius.pl/wp-content/uploads/asgarosforum/2812/Inverter_register_map.pdf
+connection: {port: 502}
+defaults: {function: holding}
+points:   # register = wire (0-based) address; comment = Fronius 1-based register number
+  ac_current:     {register: 40071, data_type: uint16, scale_register: 40075, unit: A,   name: AC current}       # 40072 A / A_SF 40076
+  voltage_an:     {register: 40079, data_type: uint16, scale_register: 40082, unit: V,   name: Voltage A-N}      # 40080 PhVphA / V_SF 40083
+  voltage_bn:     {register: 40080, data_type: uint16, scale_register: 40082, unit: V,   name: Voltage B-N}      # 40081 PhVphB
+  voltage_cn:     {register: 40081, data_type: uint16, scale_register: 40082, unit: V,   name: Voltage C-N}      # 40082 PhVphC
+  ac_power:       {register: 40083, data_type: int16,  scale_register: 40084, unit: W,   name: AC power}         # 40084 W / W_SF 40085
+  frequency:      {register: 40085, data_type: uint16, scale_register: 40086, unit: Hz,  name: Frequency}        # 40086 Hz / Hz_SF 40087
+  apparent_power: {register: 40087, data_type: int16,  scale_register: 40088, unit: VA,  name: Apparent power}   # 40088 VA / VA_SF 40089
+  reactive_power: {register: 40089, data_type: int16,  scale_register: 40090, unit: var, name: Reactive power}   # 40090 VAr / VAr_SF 40091

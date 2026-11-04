@@ -1,0 +1,55 @@
+# QTLink - cấu hình DEMO (bộ mô phỏng + máy chủ FTP/sFTP cục bộ)
+station:
+  province: BN        # Bảng 33 Phụ lục XV (mã tỉnh) - xác nhận với Sở sau sáp nhập 2025
+  facility: GULB      # TenCoSo: 4 ký tự, không dấu
+  station: NUOXA1     # TenTram: 6 ký tự, NUO (nước)/KHI (khí) + 3 ký tự
+  name: "Trạm nước thải sau xử lý - DEMO"
+logger:
+  poll_seconds: 5
+  file_interval_minutes: 1      # demo: 1 phút. Thực tế: 5 (Điều 39 TT10: chậm nhất 5 phút)
+  aggregate: avg                # avg | last  (TT10 không quy định cách lấy giá trị 5 phút)
+  decimals: 2
+  newline: crlf                 # crlf | lf (chưa quy định)
+  retention_days: 60            # TT10: lưu tối thiểu 60 ngày
+  upload_seconds: 10
+  disconnect_warn_hours: 12
+  outbox_dir: data/outbox
+  db_path: data/qtlink.db
+  strict_names: true
+  language: vi                  # giao diện mặc định tiếng Việt
+devices:
+  - name: analyzer1
+    type: tcp                   # tcp | rtu
+    host: 127.0.0.1
+    port: 5020
+    unit_id: 1
+  # - name: rtu1
+  #   type: rtu
+  #   serial_port: COM3         # Linux: /dev/ttyUSB0
+  #   baudrate: 9600
+  #   parity: N
+  #   unit_id: 2
+tags:   # param/unit theo Bảng 34 Phụ lục XV
+  - {param: pH,   name: "pH",        unit: "-",    device: analyzer1, register: 0,  data_type: float32, low: 5.5, high: 9}
+  - {param: Temp, name: "Nhiệt độ",  unit: "oC",   device: analyzer1, register: 2,  data_type: float32, high: 40}
+  - {param: TSS,  name: "TSS",       unit: "mg/L", device: analyzer1, register: 4,  data_type: float32, high: 100}
+  - {param: COD,  name: "COD",       unit: "mg/L", device: analyzer1, register: 6,  data_type: float32, high: 75, status_register: 100}
+  - {param: NH4+, name: "Amoni",     unit: "mg/L", device: analyzer1, register: 8,  data_type: float32, high: 10}
+  - {param: Flow out 1, name: "Lưu lượng ra", unit: "m3/h", device: analyzer1, register: 10, data_type: float32}
+destinations:
+  - name: SoTNMT-sFTP
+    protocol: sftp              # ftp | ftps | sftp
+    host: 127.0.0.1
+    port: 2222
+    username: demo
+    password: demo              # thực tế dùng password_env: QTLINK_SFTP_PASS
+    remote_root: ""
+    station_folder: NUOXA1      # thư mục TramA/yyyy/mm/dd
+  - name: Backup-FTP
+    protocol: ftp
+    host: 127.0.0.1
+    port: 2121
+    username: demo
+    password: demo
+    remote_root: ""
+    station_folder: NUOXA1

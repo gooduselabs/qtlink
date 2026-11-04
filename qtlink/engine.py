@@ -1,4 +1,4 @@
-"""Vòng lặp chính: đọc Modbus -> lưu -> tạo tệp TT10 -> hàng đợi gửi -> cảnh báo -> dọn dẹp."""
+"""Main loop: poll Modbus -> store -> build one file per output profile -> store-and-forward queue -> alarms -> cleanup."""
 from __future__ import annotations
 import logging
 import os
@@ -7,7 +7,7 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from . import modbus_reader, tt10, uploader
+from . import formats, modbus_reader, sinks, tt10
 from .db import DB
 
 log = logging.getLogger("qtlink")
@@ -19,7 +19,7 @@ def floor_time(t: datetime, minutes: int) -> datetime:
 
 
 class Engine:
-    def __init__(self, cfg: dict, reader=modbus_reader.read_device, upload=uploader.upload, now=datetime.now):
+    def __init__(self, cfg: dict, reader=modbus_reader.read_device, upload=sinks.send, now=datetime.now):
         self.cfg = cfg
         self.reader = reader
         self.upload_fn = upload
@@ -34,9 +34,10 @@ class Engine:
         self._dev_down: set[str] = set()
         self._last_slot = floor_time(self.now(), lg["file_interval_minutes"])
         self._stop = threading.Event()
-        for w in tt10.validate_ids(cfg["station"]["province"], cfg["station"]["facility"],
-                                   cfg["station"]["station"], lg["strict_names"]):
-            log.warning("Cấu hình tên trạm: %s", w)
+        if any(d["format"] == "tt10_txt" for d in cfg["destinations"]):
+            for w in tt10.validate_ids(cfg["station"]["province"], cfg["station"]["facility"],
+                                       cfg["station"]["station"], lg["strict_names"]):
+                log.warning("TT10 station naming: %s", w)
 
     # ---------- polling ----------
     def poll_once(self):
@@ -86,9 +87,8 @@ class Engine:
         self._limit_state[p] = state
 
     # ---------- file building ----------
-    def build_file(self, slot_end: datetime) -> str:
+    def aggregate(self, slot_end: datetime) -> list[tt10.Record]:
         lg = self.cfg["logger"]
-        st = self.cfg["station"]
         start = slot_end - timedelta(minutes=lg["file_interval_minutes"])
         rows = self.db.readings_between(start, slot_end)
         by = defaultdict(list)
@@ -105,16 +105,32 @@ class Engine:
             status = tt10.STATUS_CALIBRATING if any(r["status"] == tt10.STATUS_CALIBRATING for r in rs) else \
                 (tt10.STATUS_FAULT if len(good) < len(rs) and lg.get("partial_fault", False) else tt10.STATUS_MEASURING)
             recs.append(tt10.Record(tag["param"], val, tag["unit"], slot_end, status))
-        name = tt10.file_name(st["province"], st["facility"], st["station"], slot_end)
+        return recs
+
+    def build_file(self, slot_end: datetime) -> str | None:
+        """Aggregate the slot and write one file per output format used by an enabled sink.
+
+        Every (file, sink) pair is enqueued once (UNIQUE in SQLite) -> no duplicates.
+        Returns the path of the first file (the tt10_txt one when present)."""
+        lg = self.cfg["logger"]
+        st = self.cfg["station"]
+        recs = self.aggregate(slot_end)
+        by_fmt: dict[str, list[str]] = {}
+        for d in self.cfg["destinations"]:
+            if d.get("enabled", True):
+                by_fmt.setdefault(d["format"], []).append(d["name"])
         day_dir = os.path.join(lg["outbox_dir"], f"{slot_end:%Y}", f"{slot_end:%m}", f"{slot_end:%d}")
         os.makedirs(day_dir, exist_ok=True)
-        path = os.path.join(day_dir, name)
-        nl = "\r\n" if lg["newline"] == "crlf" else "\n"
-        with open(path, "w", encoding="utf-8", newline="") as f:
-            f.write(tt10.build_content(recs, lg["decimals"], nl))
-        self.db.add_file(name, path, slot_end, [d["name"] for d in self.cfg["destinations"] if d.get("enabled", True)])
-        log.info("Tạo tệp %s", name)
-        return path
+        paths = []
+        for fmt in sorted(by_fmt, key=lambda f: f != "tt10_txt"):
+            name = formats.file_name(fmt, st, slot_end)
+            path = os.path.join(day_dir, name)
+            with open(path, "w", encoding="utf-8", newline="") as f:
+                f.write(formats.render(fmt, recs, st, lg))
+            self.db.add_file(name, path, slot_end, by_fmt[fmt])
+            paths.append(path)
+            log.info("Built %s", name)
+        return paths[0] if paths else None
 
     def maybe_build(self):
         slot = floor_time(self.now(), self.cfg["logger"]["file_interval_minutes"])
@@ -135,7 +151,7 @@ class Engine:
                 t = datetime.fromisoformat(item["data_time"])
                 rdir = tt10.remote_dir(dest.get("remote_root", ""), dest.get("station_folder", st["station"]), t)
                 try:
-                    self.upload_fn(dest, item["path"], rdir)
+                    self.upload_fn({**dest, "_station": formats.station_id(st)}, item["path"], rdir)
                     self.db.mark(item["id"], True)
                 except Exception as e:  # noqa: BLE001
                     self.db.mark(item["id"], False, f"{type(e).__name__}: {e}")
@@ -154,9 +170,11 @@ class Engine:
         oldest = datetime.fromisoformat(pend[0]["data_time"])
         if self.now() - oldest > timedelta(hours=hours) and dest_name not in self._disc_warned:
             self._disc_warned.add(dest_name)
-            self.db.alarm("warning", "disconnect",
-                          f"Gián đoạn truyền tới {dest_name} quá {hours:g} giờ (từ {oldest:%d/%m/%Y %H:%M}). "
-                          "Theo Điều 39 TT10: phải thông báo bằng văn bản và email cho cơ quan tiếp nhận.")
+            msg = f"Gián đoạn truyền tới {dest_name} quá {hours:g} giờ (từ {oldest:%d/%m/%Y %H:%M})."
+            fmt = next((d.get("format") for d in self.cfg["destinations"] if d["name"] == dest_name), None)
+            if fmt == "tt10_txt":
+                msg += " Theo Điều 39 TT10: phải thông báo bằng văn bản và email cho cơ quan tiếp nhận."
+            self.db.alarm("warning", "disconnect", msg)
 
     def cleanup(self):
         lg = self.cfg["logger"]

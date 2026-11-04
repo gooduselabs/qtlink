@@ -26,11 +26,12 @@ def create_app(engine, config_path: str | None = None) -> FastAPI:
         dests = []
         for d in engine.cfg["destinations"]:
             r = q.get(d["name"], {})
-            dests.append({"name": d["name"], "protocol": d["protocol"], "host": d["host"], "enabled": d.get("enabled", True),
+            dests.append({"name": d["name"], "protocol": d["protocol"], "host": d.get("host") or d.get("url", ""), "format": d.get("format"), "enabled": d.get("enabled", True),
                           "sent": r.get("sent") or 0, "pending": r.get("pending") or 0,
                           "last_success": engine.db.last_success(d["name"])})
         return {"station": st, "now": datetime.now().isoformat(timespec="seconds"),
-                "interval": engine.cfg["logger"]["file_interval_minutes"], "destinations": dests}
+                "interval": engine.cfg["logger"]["file_interval_minutes"],
+                "language": engine.cfg["logger"].get("language", "en"), "destinations": dests}
 
     @app.get("/api/live")
     def live():
@@ -58,7 +59,7 @@ def create_app(engine, config_path: str | None = None) -> FastAPI:
         try:
             new = cfgmod.validate(yaml.safe_load(text))
         except Exception as e:  # noqa: BLE001
-            raise HTTPException(400, f"Config không hợp lệ: {e}")
+            raise HTTPException(400, f"Invalid config: {e}")
         engine.cfg = new
         if config_path:
             with open(config_path, "w", encoding="utf-8") as f:

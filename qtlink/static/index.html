@@ -1,4 +1,4 @@
-<!doctype html><html lang="vi" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>QTLink – TT10 Monitoring</title>
 <style>
 :root{--bg:#070d17;--bg2:#0c1626;--card:rgba(20,34,56,.55);--bd:rgba(120,170,255,.14);--tx:#e3ecf8;--mu:#8297b3;--ac:#22d3ee;--ok:#22c55e;--al:#ef4444;--cal:#f59e0b;--fa:#a78bfa;--grid:rgba(130,160,200,.12);--sh:0 8px 30px rgba(0,0,0,.35)}
@@ -71,7 +71,7 @@ button.act{background:linear-gradient(135deg,#22d3ee,#6366f1);color:#fff;border:
  <div class="sp"></div>
  <span class="pill" id="conn"><span class="dot"></span><span id="connt">…</span></span>
  <div class="clock mono" id="clk">--:--:--<small id="dt"></small></div>
- <div class="tg" id="lang"><button data-l="vi">VI</button><button data-l="en">EN</button></div>
+ <div class="tg" id="lang"><button data-l="en">EN</button><button data-l="vi">VI</button></div>
  <div class="tg" id="theme"><button data-m="dark">☾</button><button data-m="light">☀</button></div>
 </div>
 <nav><button data-t="dash" class="on" data-i="tab_dash"></button><button data-t="up" data-i="tab_up"></button><button data-t="al"><span data-i="tab_al"></span><span class="badge hide" id="nal"></span></button><button data-t="cfg" data-i="tab_cfg"></button></nav></header>
@@ -97,26 +97,27 @@ const I={vi:{tab_dash:"Tổng quan",tab_up:"Truyền dữ liệu",tab_al:"Cảnh
  zoomhint:"Kéo để phóng to · nhấp đúp để đặt lại",uplog:"Nhật ký truyền tệp",allog:"Cảnh báo & sự kiện",cfgh:"Cấu hình (YAML)",
  cfgp:"Sửa danh sách thiết bị Modbus, thông số (thanh ghi, hệ số, đơn vị, ngưỡng) và đích FTP/sFTP. Mật khẩu nên đặt qua biến môi trường (password_env).",
  save:"Lưu cấu hình",saved:"Đã lưu ✔",err:"Lỗi: ",s00:"Đang đo",s01:"Hiệu chuẩn",s02:"Lỗi thiết bị",over:"Vượt ngưỡng",lim:"Ngưỡng",wait:"Đang chờ dữ liệu…",
- online:"Đang truyền",degraded:"Chờ gửi bù",offline:"Mất kết nối",file:"Tệp",every:"chu kỳ",min:"phút",
+ online:"Đang truyền",degraded:"Chờ gửi bù",offline:"Mất kết nối",file:"Tệp",station:"Trạm",every:"chu kỳ",min:"phút",
  d_name:"Đích",d_proto:"Giao thức",d_host:"Máy chủ",d_sent:"Đã gửi",d_pend:"Chờ gửi bù",d_last:"Gửi thành công gần nhất",
  u_sent:"Đã gửi",u_failed:"Lỗi – sẽ gửi lại",u_pending:"Chờ gửi",tries:"lần thử",all:"Tất cả",
  alarm:"Báo động",warning:"Cảnh báo",info:"Thông tin",k_device:"Thiết bị",k_limit:"Ngưỡng",k_disconnect:"Truyền",
  n_an:"Analyzer",n_an2:"Modbus TCP/RTU",n_dl:"Datalogger QTLink",n_dl2:"Tệp TT10 · hàng đợi",n_net:"4G / Ethernet",n_net2:"IP tĩnh",norm:"% ngưỡng",empty:"Chưa có dữ liệu"},
-en:{tab_dash:"Overview",tab_up:"Transmission",tab_al:"Alarms",tab_cfg:"Configuration",sch:"Station schematic",dests:"Destinations (DONRE / backup)",trend:"Trend",
+en:{tab_dash:"Overview",tab_up:"Transmission",tab_al:"Alarms",tab_cfg:"Configuration",sch:"Station schematic",dests:"Sinks (store-and-forward)",trend:"Trend",
  zoomhint:"Drag to zoom · double-click to reset",uplog:"File transmission log",allog:"Alarms & events",cfgh:"Configuration (YAML)",
- cfgp:"Edit Modbus devices, parameters (register, scaling, unit, limits) and FTP/sFTP destinations. Passwords should be set via environment variables (password_env).",
+ cfgp:"Edit Modbus devices (or device templates), parameters (register, scaling, unit, limits) and sinks (FTP/sFTP, MQTT, HTTP, InfluxDB). Passwords should be set via environment variables (password_env).",
  save:"Save configuration",saved:"Saved ✔",err:"Error: ",s00:"Measuring",s01:"Calibration",s02:"Device fault",over:"Over limit",lim:"Limit",wait:"Waiting for data…",
- online:"Transmitting",degraded:"Backlog pending",offline:"Disconnected",file:"File",every:"interval",min:"min",
+ online:"Transmitting",degraded:"Backlog pending",offline:"Disconnected",file:"File",station:"Station",every:"interval",min:"min",
  d_name:"Destination",d_proto:"Protocol",d_host:"Host",d_sent:"Sent",d_pend:"Backlog",d_last:"Last success",
  u_sent:"Sent",u_failed:"Failed – will retry",u_pending:"Pending",tries:"attempts",all:"All",
  alarm:"Alarm",warning:"Warning",info:"Info",k_device:"Device",k_limit:"Limit",k_disconnect:"Link",
- n_an:"Analyzers",n_an2:"Modbus TCP/RTU",n_dl:"QTLink datalogger",n_dl2:"TT10 files · queue",n_net:"4G / Ethernet",n_net2:"Static IP",norm:"% of limit",empty:"No data yet"}};
+ n_an:"Analyzers",n_an2:"Modbus TCP/RTU",n_dl:"QTLink datalogger",n_dl2:"Profiles · S&F queue",n_net:"4G / Ethernet",n_net2:"FTP · MQTT · HTTP",norm:"% of limit",empty:"No data yet"}};
 const PN={"Nhiệt độ":"Temperature","Amoni":"Ammonium","Lưu lượng ra":"Outflow","Lưu lượng vào":"Inflow","Độ đục":"Turbidity","Bụi":"Dust","Áp suất":"Pressure","Độ ẩm":"Humidity"};
 const MSG=[[/^Mất kết nối thiết bị (.+)$/,"Lost connection to device $1"],[/^Thiết bị (.+) kết nối lại$/,"Device $1 reconnected"],
  [/^(.+) trở lại bình thường \((.+)\)$/,"$1 back to normal ($2)"],[/^(.+) vượt ngưỡng trên (.+)$/,"$1 above upper limit $2"],[/^(.+) dưới ngưỡng (.+)$/,"$1 below lower limit $2"],
  [/^Đã gửi bù xong tới (.+)$/,"Backlog fully sent to $1"],[/^Gián đoạn truyền tới (.+) quá (.+) giờ \(từ (.+)\)\. Theo Điều 39 TT10: phải thông báo bằng văn bản và email cho cơ quan tiếp nhận\.$/,
- "Transmission to $1 interrupted for over $2 h (since $3). Per Article 39 of Circular 10: notify the receiving authority in writing and by email."]];
-let LG=localStorage.qtl_lang||"vi",TH=localStorage.qtl_theme||"dark";
+ "Transmission to $1 interrupted for over $2 h (since $3). Per Article 39 of Circular 10: notify the receiving authority in writing and by email."],
+ [/^Gián đoạn truyền tới (.+) quá (.+) giờ \(từ (.+)\)\.$/,"Transmission to $1 interrupted for over $2 h (since $3). Data is kept locally and will be resent."]];
+let LG=localStorage.qtl_lang||"en",LGSET=!!localStorage.qtl_lang,TH=localStorage.qtl_theme||"dark";
 const t=k=>I[LG][k]??k,pn=n=>LG==="en"?(PN[n]||n):n,msg=m=>{if(LG!=="en")return m;for(const[r,s]of MSG)if(r.test(m))return m.replace(r,s);return m};
 const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
 const j=u=>fetch(u).then(r=>{if(!r.ok)throw r;return r.json()});const fmt=x=>x?x.replace('T',' '):'—';
@@ -125,12 +126,13 @@ let L={},S=null,U=[],A=[],SP={},sel=[],zoom=null,upF="all",alF="all",ok=true,sho
 function applyI18n(){document.documentElement.lang=LG;$$("[data-i]").forEach(e=>e.textContent=t(e.dataset.i));
  $$("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===LG));$("#hrs").title=t("trend");filters();render();}
 function applyTheme(){document.documentElement.dataset.theme=TH;$$("#theme button").forEach(b=>b.classList.toggle("on",b.dataset.m===TH));}
-$$("#lang button").forEach(b=>b.onclick=()=>{LG=localStorage.qtl_lang=b.dataset.l;applyI18n();});
+$$("#lang button").forEach(b=>b.onclick=()=>{LGSET=true;LG=localStorage.qtl_lang=b.dataset.l;applyI18n();});
 $$("#theme button").forEach(b=>b.onclick=()=>{TH=localStorage.qtl_theme=b.dataset.m;applyTheme();chart();});
 $$("nav button").forEach(b=>b.onclick=()=>{$$("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
  ['dash','up','al','cfg'].forEach(id=>$('#'+id).classList.toggle('hide',id!==b.dataset.t));if(b.dataset.t==='cfg')fetch('/api/config').then(r=>r.text()).then(x=>$('#cfgt').value=x);if(b.dataset.t==='dash')chart();});
 $('#save').onclick=async()=>{const r=await fetch('/api/config',{method:'POST',body:$('#cfgt').value});$('#msg').textContent=r.ok?t('saved'):t('err')+(await r.json()).detail;};
-function clock(){const d=new Date();$("#clk").firstChild.textContent=d.toTimeString().slice(0,8);$("#dt").textContent=d.toLocaleDateString(LG==="en"?"en-GB":"vi-VN")+" · GMT+7";}
+function clock(){const d=new Date();$("#clk").firstChild.textContent=d.toTimeString().slice(0,8);$("#dt").textContent=d.toLocaleDateString(LG==="en"?"en-GB":"vi-VN")+" · "+tzs();}
+function tzs(){const o=-new Date().getTimezoneOffset(),h=Math.trunc(Math.abs(o)/60),m=Math.abs(o)%60;return "UTC"+(o<0?"-":"+")+h+(m?":"+String(m).padStart(2,"0"):"");}
 setInterval(clock,1000);clock();
 const cls=d=>{const ex=d.value!=null&&((d.high!=null&&d.value>d.high)||(d.low!=null&&d.value<d.low));return d.status==='02'?'fault':d.status==='01'?'cal':ex?'alarm':'ok'};
 function gauge(d){const lo=d.low!=null?Math.min(0,d.low):0,hi=(d.high??Math.max(1,(d.value||0)*1.5))*1.25,f=Math.max(0,Math.min(1,((d.value??lo)-lo)/(hi-lo)));
@@ -192,10 +194,10 @@ function draw(){const svg=$('#chart'),W=svg.clientWidth||900,H=320,ml=46,mr=14,m
 $('#hrs').onchange=()=>{zoom=null;chart()};addEventListener('resize',()=>draw());
 async function sparks(){await Promise.all(Object.keys(L).map(async p=>{try{SP[p]=(await j(`/api/trend?param=${encodeURIComponent(p)}&hours=1`)).filter(d=>d.value!=null).slice(-60)}catch(e){}}));render();}
 let first=true;
-async function tick(){try{[L,S,U,A]=await Promise.all([j('/api/live'),j('/api/status'),j('/api/uploads'),j('/api/alarms')]);ok=true;}catch(e){ok=false;}
+async function tick(){try{[L,S,U,A]=await Promise.all([j('/api/live'),j('/api/status'),j('/api/uploads'),j('/api/alarms')]);ok=true;if(!LGSET&&S&&S.language&&S.language!==LG&&I[S.language]){LG=S.language;LGSET=true;applyI18n();}}catch(e){ok=false;}
  const D=S?S.destinations:[],st=!ok?'bad':D.some(d=>dstate(d)==='ok')?(D.some(d=>dstate(d)!=='ok')?'warn':''):'warn';
  $('#conn').className='pill '+st;$('#connt').textContent=t(!ok?'offline':st?'degraded':'online');
- if(S){$('#sname').textContent=S.station.name||S.station.station;$('#sfile').textContent=`${t('file')}: ${S.station.province}_${S.station.facility}_${S.station.station}_*.txt · ${t('every')} ${S.interval} ${t('min')}`;}
+ if(S){$('#sname').textContent=S.station.name||S.station.station;const fm=[...new Set((S.destinations||[]).map(d=>d.format).filter(Boolean))].join(', ');$('#sfile').textContent=`${t('station')}: ${S.station.station} · ${fm} · ${t('every')} ${S.interval} ${t('min')}`;}
  if(first&&Object.keys(L).length){first=false;sel=[Object.keys(L)[0]];render();sparks();chart();}else render();animate();}
 applyTheme();applyI18n();tick();setInterval(tick,5000);setInterval(()=>{chart();sparks()},30000);
 </script></body></html>

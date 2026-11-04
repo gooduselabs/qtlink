@@ -5,3 +5,4 @@ fastapi>=0.110
 uvicorn>=0.29
 pyyaml>=6
 pyftpdlib>=1.5
+paho-mqtt>=2.0

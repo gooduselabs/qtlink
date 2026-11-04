@@ -147,3 +147,30 @@ def start_sftp(root: str, port=2222, user="demo", password="demo", host="0.0.0.0
     threading.Thread(target=accept, daemon=True).start()
     print(f"[sftp] sFTP test tại {host}:{port} -> {root}")
     return sock
+
+
+# ---------------- HTTP webhook receiver (demo/tests) ----------------
+def start_http(root: str, port=8765, host="0.0.0.0"):
+    """Accepts POSTs and stores each body under root/ (named from X-QTLink-File). DEMO/TEST ONLY."""
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    os.makedirs(root, exist_ok=True)
+    received = []
+
+    class H(BaseHTTPRequestHandler):
+        def do_POST(self):  # noqa: N802
+            body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            name = os.path.basename(self.headers.get("X-QTLink-File") or f"post_{len(received)}.bin")
+            with open(os.path.join(root, name), "wb") as f:
+                f.write(body)
+            received.append({"path": self.path, "headers": dict(self.headers), "body": body})
+            self.send_response(204)
+            self.end_headers()
+
+        def log_message(self, *a):
+            pass
+
+    srv = ThreadingHTTPServer((host, port), H)
+    srv.received = received
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    print(f"[http] webhook test receiver at {host}:{port} -> {root}")
+    return srv
