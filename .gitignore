@@ -1,0 +1,10 @@
+.venv/
+data/
+__pycache__/
+config.yaml
+*.pyc
+.pytest_cache/
+*.key
+sftp_host_key
+.env
+*.log

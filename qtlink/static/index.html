@@ -1,0 +1,67 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QTLink – Quan trắc tự động TT10</title>
+<style>
+body{font-family:system-ui,Segoe UI,Roboto,sans-serif;margin:0;background:#f3f6f9;color:#1d2a35}
+header{background:#0b5d55;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:20px;margin:0}header small{opacity:.8}
+nav button{background:none;border:0;color:#fff;font-size:15px;padding:8px 12px;cursor:pointer;border-radius:6px}
+nav button.on{background:#ffffff30}
+main{padding:16px 20px;max-width:1200px;margin:auto}.hide{display:none}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.card{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px #0002;border-left:5px solid #2a9d8f;cursor:pointer}
+.card.alarm{border-color:#e63946;background:#fff1f2}.card.fault{border-color:#999}.card.cal{border-color:#f4a261}
+.card .p{font-size:13px;color:#566}.card .v{font-size:28px;font-weight:600}.card .u{font-size:13px;color:#566}
+.card .s{font-size:12px;margin-top:4px}
+section{background:#fff;border-radius:10px;padding:14px;margin-top:14px;box-shadow:0 1px 3px #0002}
+h2{font-size:16px;margin:0 0 10px}table{border-collapse:collapse;width:100%;font-size:13px}
+td,th{padding:5px 8px;border-bottom:1px solid #eee;text-align:left}th{background:#f7f9fb}
+.ok{color:#1b8a3a;font-weight:600}.bad{color:#d62828;font-weight:600}.warn{color:#c77700;font-weight:600}
+textarea{width:100%;height:480px;font-family:Consolas,monospace;font-size:13px}
+button.act{background:#0b5d55;color:#fff;border:0;padding:8px 14px;border-radius:6px;cursor:pointer}
+svg{width:100%;height:260px}select{padding:4px}
+</style></head><body>
+<header><div><h1>QTLink <small>· Quan trắc tự động theo TT 10/2021/TT-BTNMT</small></h1><small id="st"></small></div>
+<nav><button data-t="dash" class="on">Tổng quan</button><button data-t="up">Truyền dữ liệu</button><button data-t="al">Cảnh báo</button><button data-t="cfg">Cấu hình</button></nav></header>
+<main>
+<div id="dash">
+ <div class="cards" id="cards"></div>
+ <section><h2>Biểu đồ xu hướng: <select id="sel"></select> <select id="hrs"><option value="1">1 giờ</option><option value="6" selected>6 giờ</option><option value="24">24 giờ</option></select></h2><svg id="chart"></svg></section>
+ <section><h2>Đích truyền (Sở TNMT / dự phòng)</h2><table id="dests"></table></section>
+</div>
+<div id="up" class="hide"><section><h2>Nhật ký truyền tệp</h2><table id="ups"></table></section></div>
+<div id="al" class="hide"><section><h2>Cảnh báo & sự kiện</h2><table id="als"></table></section></div>
+<div id="cfg" class="hide"><section><h2>Cấu hình (YAML)</h2>
+<p style="font-size:13px">Sửa danh sách thiết bị Modbus, thông số (thanh ghi, hệ số, đơn vị, ngưỡng) và đích FTP/sFTP. Mật khẩu nên đặt qua biến môi trường (<code>password_env</code>).</p>
+<textarea id="cfgt"></textarea><p><button class="act" id="save">Lưu cấu hình</button> <span id="msg"></span></p></section></div>
+</main>
+<script>
+const $=s=>document.querySelector(s);const ST={"00":"Đang đo","01":"Hiệu chuẩn","02":"Lỗi thiết bị"};
+const j=u=>fetch(u).then(r=>r.json());const fmt=t=>t?t.replace('T',' '):'—';
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+ ['dash','up','al','cfg'].forEach(id=>$('#'+id).classList.toggle('hide',id!==b.dataset.t));if(b.dataset.t==='cfg')fetch('/api/config').then(r=>r.text()).then(t=>$('#cfgt').value=t);});
+$('#save').onclick=async()=>{const r=await fetch('/api/config',{method:'POST',body:$('#cfgt').value});$('#msg').textContent=r.ok?'Đã lưu ✔':'Lỗi: '+(await r.json()).detail;};
+let first=true;
+async function live(){const L=await j('/api/live');let h='';for(const[p,d]of Object.entries(L)){
+ const ex=d.value!=null&&((d.high!=null&&d.value>d.high)||(d.low!=null&&d.value<d.low));
+ const c=d.status==='02'?'fault':d.status==='01'?'cal':ex?'alarm':'';
+ h+=`<div class="card ${c}" onclick="pick('${p}')"><div class="p">${d.name} (${p})</div><div class="v">${d.value==null?'—':d.value.toFixed(2)} <span class="u">${d.unit}</span></div>
+ <div class="s">${ST[d.status]} ${ex?'<span class=bad>· VƯỢT NGƯỠNG</span>':''} ${d.high!=null?'· Ngưỡng '+(d.low!=null?d.low+'–':'≤')+d.high:''}</div></div>`;}
+ $('#cards').innerHTML=h||'<p>Đang chờ dữ liệu…</p>';
+ if(first&&Object.keys(L).length){$('#sel').innerHTML=Object.keys(L).map(p=>`<option>${p}</option>`).join('');first=false;chart();}}
+function pick(p){$('#sel').value=p;chart();}
+async function chart(){const p=$('#sel').value;if(!p)return;const D=(await j(`/api/trend?param=${encodeURIComponent(p)}&hours=${$('#hrs').value}`)).filter(d=>d.value!=null);
+ const svg=$('#chart'),W=svg.clientWidth||900,H=260,m=40;if(!D.length){svg.innerHTML='';return;}
+ const xs=D.map(d=>new Date(d.ts).getTime()),ys=D.map(d=>d.value);const x0=Math.min(...xs),x1=Math.max(...xs)||x0+1;
+ let y0=Math.min(...ys),y1=Math.max(...ys);const L=(await j('/api/live'))[p]||{};if(L.high!=null)y1=Math.max(y1,L.high);if(L.low!=null)y0=Math.min(y0,L.low);const pad=(y1-y0)*.1||1;y0-=pad;y1+=pad;
+ const X=t=>m+(t-x0)/((x1-x0)||1)*(W-m-10),Y=v=>H-25-(v-y0)/(y1-y0)*(H-35);
+ let g='';for(let i=0;i<=4;i++){const v=y0+(y1-y0)*i/4;g+=`<line x1=${m} x2=${W-10} y1=${Y(v)} y2=${Y(v)} stroke="#eee"/><text x=2 y=${Y(v)+4} font-size=11 fill="#678">${v.toFixed(1)}</text>`;}
+ for(let i=0;i<=4;i++){const t=x0+(x1-x0)*i/4;g+=`<text x=${X(t)-20} y=${H-6} font-size=11 fill="#678">${new Date(t).toTimeString().slice(0,5)}</text>`;}
+ if(L.high!=null)g+=`<line x1=${m} x2=${W-10} y1=${Y(L.high)} y2=${Y(L.high)} stroke="#e63946" stroke-dasharray="6 4"/><text x=${W-90} y=${Y(L.high)-4} font-size=11 fill="#e63946">Ngưỡng ${L.high}</text>`;
+ g+=`<polyline fill="none" stroke="#0b5d55" stroke-width="2" points="${D.map(d=>X(new Date(d.ts).getTime())+','+Y(d.value)).join(' ')}"/>`;svg.innerHTML=g;}
+$('#sel').onchange=chart;$('#hrs').onchange=chart;
+async function status(){const S=await j('/api/status');$('#st').textContent=`${S.station.name||''} · Tệp: ${S.station.province}_${S.station.facility}_${S.station.station}_*.txt · chu kỳ ${S.interval} phút · ${fmt(S.now)}`;
+ $('#dests').innerHTML='<tr><th>Đích</th><th>Giao thức</th><th>Máy chủ</th><th>Đã gửi</th><th>Chờ gửi bù</th><th>Gửi thành công gần nhất</th></tr>'+S.destinations.map(d=>`<tr><td>${d.name}</td><td>${d.protocol.toUpperCase()}</td><td>${d.host}</td><td class=ok>${d.sent}</td><td class="${d.pending?'warn':''}">${d.pending}</td><td>${fmt(d.last_success)}</td></tr>`).join('');}
+async function ups(){const U=await j('/api/uploads');$('#ups').innerHTML='<tr><th>Tệp</th><th>Đích</th><th>Trạng thái</th><th>Số lần</th><th>Thời điểm gửi</th><th>Lỗi</th></tr>'+U.map(u=>`<tr><td>${u.name}</td><td>${u.dest}</td><td class="${u.status==='sent'?'ok':u.status==='failed'?'bad':'warn'}">${{sent:'Đã gửi',failed:'Lỗi – sẽ gửi lại',pending:'Chờ gửi'}[u.status]}</td><td>${u.attempts}</td><td>${fmt(u.sent_at||u.last_try)}</td><td>${u.last_error||''}</td></tr>`).join('');}
+async function als(){const A=await j('/api/alarms');$('#als').innerHTML='<tr><th>Thời gian</th><th>Mức</th><th>Loại</th><th>Nội dung</th></tr>'+A.map(a=>`<tr><td>${fmt(a.ts)}</td><td class="${a.level==='alarm'?'bad':a.level==='warning'?'warn':'ok'}">${{alarm:'BÁO ĐỘNG',warning:'Cảnh báo',info:'Thông tin'}[a.level]}</td><td>${a.kind}</td><td>${a.message}</td></tr>`).join('');}
+function tick(){live();status();ups();als();}tick();setInterval(tick,5000);setInterval(chart,30000);
+</script></body></html>
