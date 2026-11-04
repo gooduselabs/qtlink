@@ -1,67 +1,201 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>QTLink – Quan trắc tự động TT10</title>
+<!doctype html><html lang="vi" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QTLink – TT10 Monitoring</title>
 <style>
-body{font-family:system-ui,Segoe UI,Roboto,sans-serif;margin:0;background:#f3f6f9;color:#1d2a35}
-header{background:#0b5d55;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
-header h1{font-size:20px;margin:0}header small{opacity:.8}
-nav button{background:none;border:0;color:#fff;font-size:15px;padding:8px 12px;cursor:pointer;border-radius:6px}
-nav button.on{background:#ffffff30}
-main{padding:16px 20px;max-width:1200px;margin:auto}.hide{display:none}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
-.card{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px #0002;border-left:5px solid #2a9d8f;cursor:pointer}
-.card.alarm{border-color:#e63946;background:#fff1f2}.card.fault{border-color:#999}.card.cal{border-color:#f4a261}
-.card .p{font-size:13px;color:#566}.card .v{font-size:28px;font-weight:600}.card .u{font-size:13px;color:#566}
-.card .s{font-size:12px;margin-top:4px}
-section{background:#fff;border-radius:10px;padding:14px;margin-top:14px;box-shadow:0 1px 3px #0002}
-h2{font-size:16px;margin:0 0 10px}table{border-collapse:collapse;width:100%;font-size:13px}
-td,th{padding:5px 8px;border-bottom:1px solid #eee;text-align:left}th{background:#f7f9fb}
-.ok{color:#1b8a3a;font-weight:600}.bad{color:#d62828;font-weight:600}.warn{color:#c77700;font-weight:600}
+:root{--bg:#070d17;--bg2:#0c1626;--card:rgba(20,34,56,.55);--bd:rgba(120,170,255,.14);--tx:#e3ecf8;--mu:#8297b3;--ac:#22d3ee;--ok:#22c55e;--al:#ef4444;--cal:#f59e0b;--fa:#a78bfa;--grid:rgba(130,160,200,.12);--sh:0 8px 30px rgba(0,0,0,.35)}
+[data-theme=light]{--bg:#eef3f9;--bg2:#e2eaf4;--card:rgba(255,255,255,.75);--bd:rgba(30,60,110,.12);--tx:#13233a;--mu:#5b6e88;--ac:#0891b2;--grid:rgba(30,60,110,.1);--sh:0 6px 20px rgba(20,40,80,.1)}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,"Segoe UI",Roboto,sans-serif;color:var(--tx);min-height:100vh;
+ background:radial-gradient(1200px 600px at 10% -10%,rgba(34,211,238,.13),transparent 60%),radial-gradient(900px 500px at 100% 0,rgba(99,102,241,.12),transparent 60%),var(--bg);background-attachment:fixed}
+.mono{font-family:"JetBrains Mono",Consolas,ui-monospace,monospace}
+header{position:sticky;top:0;z-index:10;backdrop-filter:blur(14px);background:color-mix(in srgb,var(--bg) 70%,transparent);border-bottom:1px solid var(--bd)}
+.hb{display:flex;align-items:center;gap:16px;padding:10px 22px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px}.logo b{font-size:19px;letter-spacing:.5px}
+.logo i{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#22d3ee,#6366f1);display:grid;place-items:center;font-style:normal;font-weight:800;color:#fff;box-shadow:0 0 18px rgba(34,211,238,.5)}
+.stn{display:flex;flex-direction:column;line-height:1.25}.stn small{color:var(--mu);font-size:12px}
+.sp{flex:1}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:99px;font-size:12.5px;font-weight:600;border:1px solid var(--bd);background:var(--card)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);animation:pulse 1.8s infinite}
+.pill.bad .dot{background:var(--al);box-shadow:0 0 8px var(--al)}.pill.warn .dot{background:var(--cal);box-shadow:0 0 8px var(--cal)}
+@keyframes pulse{50%{opacity:.4}}
+.clock{font-size:20px;font-weight:600;letter-spacing:1px}.clock small{display:block;font-size:11px;color:var(--mu);letter-spacing:0;text-align:right}
+.tg{display:flex;border:1px solid var(--bd);border-radius:9px;overflow:hidden}.tg button{background:none;border:0;color:var(--mu);padding:6px 10px;cursor:pointer;font-weight:600;font-size:12px}
+.tg button.on{background:var(--ac);color:#04121c}
+nav{display:flex;gap:4px;padding:0 22px;overflow-x:auto}
+nav button{background:none;border:0;color:var(--mu);font-size:14px;padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-weight:500}
+nav button.on{color:var(--tx);border-color:var(--ac)}nav .badge{background:var(--al);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px;margin-left:6px}
+main{padding:18px 22px 40px;max-width:1440px;margin:auto}.hide{display:none!important}
+.glass{background:var(--card);border:1px solid var(--bd);border-radius:16px;backdrop-filter:blur(12px);box-shadow:var(--sh)}
+section.glass{padding:16px 18px;margin-top:16px}
+h2{font-size:14px;margin:0 0 12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--mu);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.card{padding:14px 16px 10px;cursor:pointer;position:relative;overflow:hidden;transition:transform .2s,border-color .2s}
+.card:hover{transform:translateY(-2px)}.card.sel{border-color:var(--ac)}
+.card::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--c,var(--ok));box-shadow:0 0 14px var(--c,var(--ok))}
+.card.alarm{--c:var(--al);background:linear-gradient(135deg,rgba(239,68,68,.16),var(--card))}.card.cal{--c:var(--cal)}.card.fault{--c:var(--fa)}
+.ch{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--mu)}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--c,var(--ok));text-transform:uppercase}
+.st::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c,var(--ok));box-shadow:0 0 8px var(--c,var(--ok))}
+.card.alarm .st::before{animation:pulse .9s infinite}
+.vr{display:flex;align-items:flex-end;justify-content:space-between;margin-top:6px}
+.v{font-size:32px;font-weight:700;line-height:1}.v small{font-size:13px;color:var(--mu);font-weight:500;margin-left:4px}
+.lim{font-size:11px;color:var(--mu);margin-top:4px}
+.gauge{width:64px;height:40px}.spark{width:100%;height:36px;display:block;margin-top:6px}
+.row{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}.row>section{margin-top:16px}
+svg text{fill:var(--mu);font-family:inherit}
+#sch{width:100%;height:240px}
+.flow{stroke-dasharray:6 8;animation:flow 1s linear infinite}.flow.off{animation:none;stroke-dasharray:3 6;opacity:.6}
+@keyframes flow{to{stroke-dashoffset:-14}}
+.node rect{fill:var(--bg2);stroke:var(--bd);stroke-width:1.5}.node text{fill:var(--tx);font-size:12px}.node .sub{fill:var(--mu);font-size:10.5px}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{padding:8px 10px;border-bottom:1px solid var(--bd);text-align:left}th{color:var(--mu);font-weight:500;font-size:12px;text-transform:uppercase}
+.ok{color:var(--ok);font-weight:600}.bad{color:var(--al);font-weight:600}.warn{color:var(--cal);font-weight:600}
+.chips{display:flex;gap:6px;flex-wrap:wrap;text-transform:none;letter-spacing:0}
+.chip{border:1px solid var(--bd);background:none;color:var(--mu);border-radius:99px;padding:3px 10px;font-size:12px;cursor:pointer}
+.chip.on{color:#fff;border-color:var(--k);background:color-mix(in srgb,var(--k) 35%,transparent)}
+select,textarea{background:var(--bg2);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:5px 8px}
+#chart{width:100%;height:320px;cursor:crosshair;user-select:none}.hint{font-size:11px;color:var(--mu);text-transform:none;letter-spacing:0}
+#tip{position:fixed;pointer-events:none;padding:8px 10px;font-size:12px;border-radius:10px;z-index:20}
+.tl{position:relative;padding-left:22px}.tl::before{content:"";position:absolute;left:7px;top:4px;bottom:4px;width:2px;background:var(--bd)}
+.ti{position:relative;padding:8px 12px;margin-bottom:8px;border-radius:12px;background:color-mix(in srgb,var(--bg2) 60%,transparent);border:1px solid var(--bd);display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:13px}
+.ti::before{content:"";position:absolute;left:-20px;top:13px;width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c)}
+.ti .m{color:var(--mu);font-size:12px}.ti .tag{font-size:11px;font-weight:700;color:var(--c);text-transform:uppercase}
+.ti.sent{--c:var(--ok)}.ti.failed{--c:var(--al)}.ti.pending{--c:var(--cal)}.ti.alarm{--c:var(--al);background:rgba(239,68,68,.09)}.ti.warning{--c:var(--cal)}.ti.info{--c:var(--ac)}
+.flt{display:flex;gap:6px}
 textarea{width:100%;height:480px;font-family:Consolas,monospace;font-size:13px}
-button.act{background:#0b5d55;color:#fff;border:0;padding:8px 14px;border-radius:6px;cursor:pointer}
-svg{width:100%;height:260px}select{padding:4px}
+button.act{background:linear-gradient(135deg,#22d3ee,#6366f1);color:#fff;border:0;padding:9px 18px;border-radius:9px;cursor:pointer;font-weight:600}
+@media(max-width:960px){.row{grid-template-columns:1fr}}
+@media(max-width:600px){.hb{padding:8px 12px;gap:10px}main{padding:12px}nav{padding:0 8px}.stn small{display:none}.clock{font-size:16px}.cards{grid-template-columns:1fr 1fr;gap:10px}.v{font-size:24px}.gauge{display:none}#sch{height:200px}.hidem{display:none}td,th{padding:6px}}
 </style></head><body>
-<header><div><h1>QTLink <small>· Quan trắc tự động theo TT 10/2021/TT-BTNMT</small></h1><small id="st"></small></div>
-<nav><button data-t="dash" class="on">Tổng quan</button><button data-t="up">Truyền dữ liệu</button><button data-t="al">Cảnh báo</button><button data-t="cfg">Cấu hình</button></nav></header>
+<header><div class="hb">
+ <div class="logo"><i>Q</i><b>QTLink</b></div>
+ <div class="stn"><span id="sname">—</span><small id="sfile"></small></div>
+ <div class="sp"></div>
+ <span class="pill" id="conn"><span class="dot"></span><span id="connt">…</span></span>
+ <div class="clock mono" id="clk">--:--:--<small id="dt"></small></div>
+ <div class="tg" id="lang"><button data-l="vi">VI</button><button data-l="en">EN</button></div>
+ <div class="tg" id="theme"><button data-m="dark">☾</button><button data-m="light">☀</button></div>
+</div>
+<nav><button data-t="dash" class="on" data-i="tab_dash"></button><button data-t="up" data-i="tab_up"></button><button data-t="al"><span data-i="tab_al"></span><span class="badge hide" id="nal"></span></button><button data-t="cfg" data-i="tab_cfg"></button></nav></header>
 <main>
 <div id="dash">
  <div class="cards" id="cards"></div>
- <section><h2>Biểu đồ xu hướng: <select id="sel"></select> <select id="hrs"><option value="1">1 giờ</option><option value="6" selected>6 giờ</option><option value="24">24 giờ</option></select></h2><svg id="chart"></svg></section>
- <section><h2>Đích truyền (Sở TNMT / dự phòng)</h2><table id="dests"></table></section>
+ <div class="row">
+  <section class="glass"><h2 data-i="sch"></h2><svg id="sch" viewBox="0 0 760 240" preserveAspectRatio="xMidYMid meet"></svg></section>
+  <section class="glass"><h2 data-i="dests"></h2><div style="overflow-x:auto"><table id="dests"></table></div></section>
+ </div>
+ <section class="glass"><h2><span data-i="trend"></span><span class="chips" id="sel"></span><span class="sp"></span>
+  <select id="hrs"><option value="1">1h</option><option value="6" selected>6h</option><option value="24">24h</option></select><span class="hint" data-i="zoomhint"></span></h2>
+  <svg id="chart"></svg></section>
 </div>
-<div id="up" class="hide"><section><h2>Nhật ký truyền tệp</h2><table id="ups"></table></section></div>
-<div id="al" class="hide"><section><h2>Cảnh báo & sự kiện</h2><table id="als"></table></section></div>
-<div id="cfg" class="hide"><section><h2>Cấu hình (YAML)</h2>
-<p style="font-size:13px">Sửa danh sách thiết bị Modbus, thông số (thanh ghi, hệ số, đơn vị, ngưỡng) và đích FTP/sFTP. Mật khẩu nên đặt qua biến môi trường (<code>password_env</code>).</p>
-<textarea id="cfgt"></textarea><p><button class="act" id="save">Lưu cấu hình</button> <span id="msg"></span></p></section></div>
-</main>
+<div id="up" class="hide"><section class="glass"><h2><span data-i="uplog"></span><span class="sp"></span><span class="flt" id="upf"></span></h2><div class="tl" id="ups"></div></section></div>
+<div id="al" class="hide"><section class="glass"><h2><span data-i="allog"></span><span class="sp"></span><span class="flt" id="alf"></span></h2><div class="tl" id="als"></div></section></div>
+<div id="cfg" class="hide"><section class="glass"><h2 data-i="cfgh"></h2>
+<p style="font-size:13px;color:var(--mu)" data-i="cfgp"></p>
+<textarea id="cfgt" spellcheck="false"></textarea><p><button class="act" id="save" data-i="save"></button> <span id="msg"></span></p></section></div>
+</main><div id="tip" class="glass hide"></div>
 <script>
-const $=s=>document.querySelector(s);const ST={"00":"Đang đo","01":"Hiệu chuẩn","02":"Lỗi thiết bị"};
-const j=u=>fetch(u).then(r=>r.json());const fmt=t=>t?t.replace('T',' '):'—';
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
- ['dash','up','al','cfg'].forEach(id=>$('#'+id).classList.toggle('hide',id!==b.dataset.t));if(b.dataset.t==='cfg')fetch('/api/config').then(r=>r.text()).then(t=>$('#cfgt').value=t);});
-$('#save').onclick=async()=>{const r=await fetch('/api/config',{method:'POST',body:$('#cfgt').value});$('#msg').textContent=r.ok?'Đã lưu ✔':'Lỗi: '+(await r.json()).detail;};
+const I={vi:{tab_dash:"Tổng quan",tab_up:"Truyền dữ liệu",tab_al:"Cảnh báo",tab_cfg:"Cấu hình",sch:"Sơ đồ trạm",dests:"Đích truyền (Sở TNMT / dự phòng)",trend:"Xu hướng",
+ zoomhint:"Kéo để phóng to · nhấp đúp để đặt lại",uplog:"Nhật ký truyền tệp",allog:"Cảnh báo & sự kiện",cfgh:"Cấu hình (YAML)",
+ cfgp:"Sửa danh sách thiết bị Modbus, thông số (thanh ghi, hệ số, đơn vị, ngưỡng) và đích FTP/sFTP. Mật khẩu nên đặt qua biến môi trường (password_env).",
+ save:"Lưu cấu hình",saved:"Đã lưu ✔",err:"Lỗi: ",s00:"Đang đo",s01:"Hiệu chuẩn",s02:"Lỗi thiết bị",over:"Vượt ngưỡng",lim:"Ngưỡng",wait:"Đang chờ dữ liệu…",
+ online:"Đang truyền",degraded:"Chờ gửi bù",offline:"Mất kết nối",file:"Tệp",every:"chu kỳ",min:"phút",
+ d_name:"Đích",d_proto:"Giao thức",d_host:"Máy chủ",d_sent:"Đã gửi",d_pend:"Chờ gửi bù",d_last:"Gửi thành công gần nhất",
+ u_sent:"Đã gửi",u_failed:"Lỗi – sẽ gửi lại",u_pending:"Chờ gửi",tries:"lần thử",all:"Tất cả",
+ alarm:"Báo động",warning:"Cảnh báo",info:"Thông tin",k_device:"Thiết bị",k_limit:"Ngưỡng",k_disconnect:"Truyền",
+ n_an:"Analyzer",n_an2:"Modbus TCP/RTU",n_dl:"Datalogger QTLink",n_dl2:"Tệp TT10 · hàng đợi",n_net:"4G / Ethernet",n_net2:"IP tĩnh",norm:"% ngưỡng",empty:"Chưa có dữ liệu"},
+en:{tab_dash:"Overview",tab_up:"Transmission",tab_al:"Alarms",tab_cfg:"Configuration",sch:"Station schematic",dests:"Destinations (DONRE / backup)",trend:"Trend",
+ zoomhint:"Drag to zoom · double-click to reset",uplog:"File transmission log",allog:"Alarms & events",cfgh:"Configuration (YAML)",
+ cfgp:"Edit Modbus devices, parameters (register, scaling, unit, limits) and FTP/sFTP destinations. Passwords should be set via environment variables (password_env).",
+ save:"Save configuration",saved:"Saved ✔",err:"Error: ",s00:"Measuring",s01:"Calibration",s02:"Device fault",over:"Over limit",lim:"Limit",wait:"Waiting for data…",
+ online:"Transmitting",degraded:"Backlog pending",offline:"Disconnected",file:"File",every:"interval",min:"min",
+ d_name:"Destination",d_proto:"Protocol",d_host:"Host",d_sent:"Sent",d_pend:"Backlog",d_last:"Last success",
+ u_sent:"Sent",u_failed:"Failed – will retry",u_pending:"Pending",tries:"attempts",all:"All",
+ alarm:"Alarm",warning:"Warning",info:"Info",k_device:"Device",k_limit:"Limit",k_disconnect:"Link",
+ n_an:"Analyzers",n_an2:"Modbus TCP/RTU",n_dl:"QTLink datalogger",n_dl2:"TT10 files · queue",n_net:"4G / Ethernet",n_net2:"Static IP",norm:"% of limit",empty:"No data yet"}};
+const PN={"Nhiệt độ":"Temperature","Amoni":"Ammonium","Lưu lượng ra":"Outflow","Lưu lượng vào":"Inflow","Độ đục":"Turbidity","Bụi":"Dust","Áp suất":"Pressure","Độ ẩm":"Humidity"};
+const MSG=[[/^Mất kết nối thiết bị (.+)$/,"Lost connection to device $1"],[/^Thiết bị (.+) kết nối lại$/,"Device $1 reconnected"],
+ [/^(.+) trở lại bình thường \((.+)\)$/,"$1 back to normal ($2)"],[/^(.+) vượt ngưỡng trên (.+)$/,"$1 above upper limit $2"],[/^(.+) dưới ngưỡng (.+)$/,"$1 below lower limit $2"],
+ [/^Đã gửi bù xong tới (.+)$/,"Backlog fully sent to $1"],[/^Gián đoạn truyền tới (.+) quá (.+) giờ \(từ (.+)\)\. Theo Điều 39 TT10: phải thông báo bằng văn bản và email cho cơ quan tiếp nhận\.$/,
+ "Transmission to $1 interrupted for over $2 h (since $3). Per Article 39 of Circular 10: notify the receiving authority in writing and by email."]];
+let LG=localStorage.qtl_lang||"vi",TH=localStorage.qtl_theme||"dark";
+const t=k=>I[LG][k]??k,pn=n=>LG==="en"?(PN[n]||n):n,msg=m=>{if(LG!=="en")return m;for(const[r,s]of MSG)if(r.test(m))return m.replace(r,s);return m};
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+const j=u=>fetch(u).then(r=>{if(!r.ok)throw r;return r.json()});const fmt=x=>x?x.replace('T',' '):'—';
+const COL=["#22d3ee","#a78bfa","#f472b6","#34d399","#fbbf24","#60a5fa","#fb923c","#f87171"];
+let L={},S=null,U=[],A=[],SP={},sel=[],zoom=null,upF="all",alF="all",ok=true,shown={};
+function applyI18n(){document.documentElement.lang=LG;$$("[data-i]").forEach(e=>e.textContent=t(e.dataset.i));
+ $$("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===LG));$("#hrs").title=t("trend");filters();render();}
+function applyTheme(){document.documentElement.dataset.theme=TH;$$("#theme button").forEach(b=>b.classList.toggle("on",b.dataset.m===TH));}
+$$("#lang button").forEach(b=>b.onclick=()=>{LG=localStorage.qtl_lang=b.dataset.l;applyI18n();});
+$$("#theme button").forEach(b=>b.onclick=()=>{TH=localStorage.qtl_theme=b.dataset.m;applyTheme();chart();});
+$$("nav button").forEach(b=>b.onclick=()=>{$$("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+ ['dash','up','al','cfg'].forEach(id=>$('#'+id).classList.toggle('hide',id!==b.dataset.t));if(b.dataset.t==='cfg')fetch('/api/config').then(r=>r.text()).then(x=>$('#cfgt').value=x);if(b.dataset.t==='dash')chart();});
+$('#save').onclick=async()=>{const r=await fetch('/api/config',{method:'POST',body:$('#cfgt').value});$('#msg').textContent=r.ok?t('saved'):t('err')+(await r.json()).detail;};
+function clock(){const d=new Date();$("#clk").firstChild.textContent=d.toTimeString().slice(0,8);$("#dt").textContent=d.toLocaleDateString(LG==="en"?"en-GB":"vi-VN")+" · GMT+7";}
+setInterval(clock,1000);clock();
+const cls=d=>{const ex=d.value!=null&&((d.high!=null&&d.value>d.high)||(d.low!=null&&d.value<d.low));return d.status==='02'?'fault':d.status==='01'?'cal':ex?'alarm':'ok'};
+function gauge(d){const lo=d.low!=null?Math.min(0,d.low):0,hi=(d.high??Math.max(1,(d.value||0)*1.5))*1.25,f=Math.max(0,Math.min(1,((d.value??lo)-lo)/(hi-lo)));
+ const arc=(a,b)=>{const p=x=>[32+26*Math.cos(Math.PI*(1-x)),36-26*Math.sin(Math.PI*(1-x))];const[a1,a2]=p(a),[b1,b2]=p(b);return`M${a1} ${a2}A26 26 0 0 1 ${b1} ${b2}`};
+ const lf=d.high!=null?(d.high-lo)/(hi-lo):null;
+ return`<svg class="gauge" viewBox="0 0 64 40"><path d="${arc(0,1)}" stroke="var(--grid)" stroke-width="6" fill="none" stroke-linecap="round"/><path d="${arc(0,Math.max(.001,f))}" stroke="var(--c,var(--ok))" stroke-width="6" fill="none" stroke-linecap="round" style="filter:drop-shadow(0 0 3px var(--c,var(--ok)))"/>${lf!=null?`<path d="${arc(lf-.005,lf+.005)}" stroke="var(--al)" stroke-width="9" fill="none"/>`:''}</svg>`;}
+function spark(p,d){const D=SP[p]||[];if(D.length<2)return'<svg class="spark"></svg>';const ys=D.map(x=>x.value);let a=Math.min(...ys),b=Math.max(...ys);if(b-a<1e-9){a-=1;b+=1}
+ const pts=D.map((x,i)=>[i/(D.length-1)*200,34-(x.value-a)/(b-a)*30]);const ln=pts.map(q=>q.join(',')).join(' ');
+ return`<svg class="spark" viewBox="0 0 200 36" preserveAspectRatio="none"><defs><linearGradient id="g${p.replace(/\W/g,'')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--c,var(--ok))" stop-opacity=".35"/><stop offset="1" stop-color="var(--c,var(--ok))" stop-opacity="0"/></linearGradient></defs><polygon points="0,36 ${ln} 200,36" fill="url(#g${p.replace(/\W/g,'')})"/><polyline points="${ln}" fill="none" stroke="var(--c,var(--ok))" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`;}
+function render(){const ks=Object.keys(L);if(!ks.length){$('#cards').innerHTML=`<p>${t('wait')}</p>`;}else{
+ $('#cards').innerHTML=ks.map(p=>{const d=L[p],c=cls(d);const lab=c==='alarm'?t('over'):t('s'+d.status);
+ return`<div class="card glass ${c} ${sel.includes(p)?'sel':''}" data-p="${p}"><div class="ch"><span>${pn(d.name)}${d.name!==p?` <span class="mono">· ${p}</span>`:""}</span><span class="st">${lab}</span></div>
+ <div class="vr"><div><div class="v mono"><span class="num" data-p="${p}">${(shown[p]??d.value)==null?'—':(shown[p]??d.value).toFixed(2)}</span><small>${d.unit}</small></div>
+ <div class="lim">${d.high!=null?t('lim')+' '+(d.low!=null?d.low+'–':'≤ ')+d.high:'&nbsp;'}</div></div>${gauge(d)}</div>${spark(p,d)}</div>`}).join('');
+ $$('.card').forEach(c=>c.onclick=()=>{const p=c.dataset.p;sel=sel.includes(p)?sel.filter(x=>x!==p):[...sel,p];if(!sel.length)sel=[p];zoom=null;chips();chart();render();});}
+ chips();schematic();dests();timeline();}
+function animate(){$$('.num').forEach(e=>{const p=e.dataset.p,d=L[p];if(!d||d.value==null)return;const from=shown[p]??d.value,to=d.value,t0=performance.now();
+ const st=n=>{const k=Math.min(1,(n-t0)/900),v=from+(to-from)*(1-Math.pow(1-k,3));shown[p]=v;const el=document.querySelector(`.num[data-p="${CSS.escape(p)}"]`);if(el)el.textContent=v.toFixed(2);if(k<1)requestAnimationFrame(st)};requestAnimationFrame(st);});}
+function chips(){$('#sel').innerHTML=Object.keys(L).map((p,i)=>`<button class="chip ${sel.includes(p)?'on':''}" style="--k:${COL[i%8]}" data-p="${p}">${p}</button>`).join('');
+ $$('#sel .chip').forEach(b=>b.onclick=()=>{const p=b.dataset.p;sel=sel.includes(p)?sel.filter(x=>x!==p):[...sel,p];if(!sel.length)sel=[p];zoom=null;chips();chart();$$('.card').forEach(c=>c.classList.toggle('sel',sel.includes(c.dataset.p)));});}
+function dstate(d){if(!ok)return'off';if(!d.enabled)return'off';if(d.pending>2)return'warn';return d.last_success?'ok':'warn';}
+function schematic(){if(!S)return;const D=S.destinations,n=D.length||1;const anyAl=Object.values(L).some(d=>cls(d)!=='ok');const C={ok:'var(--ok)',warn:'var(--cal)',off:'var(--al)'};
+ const node=(x,y,w,a,b,c='var(--ac)')=>`<g class="node"><rect x="${x}" y="${y}" width="${w}" height="54" rx="12" style="stroke:${c}"/><circle cx="${x+14}" cy="${y+16}" r="4" fill="${c}" style="filter:drop-shadow(0 0 4px ${c})"/><text x="${x+24}" y="${y+21}">${a}</text><text class="sub" x="${x+12}" y="${y+40}">${b}</text></g>`;
+ const ys=D.map((_,i)=>n===1?93:12+i*(174/(n-1)));const net=D.some(d=>dstate(d)==='ok')?'ok':D.some(d=>dstate(d)==='warn')?'warn':'off';
+ let g=`<path class="flow" d="M150 120 H210" stroke="${anyAl?'var(--cal)':'var(--ac)'}" stroke-width="3" fill="none"/><path class="flow ${net==='off'?'off':''}" d="M360 120 H410" stroke="${C[net]}" stroke-width="3" fill="none"/>`;
+ D.forEach((d,i)=>{const s=dstate(d);g+=`<path class="flow ${s==='off'?'off':''}" d="M540 120 C570 120 570 ${ys[i]+27} 600 ${ys[i]+27}" stroke="${C[s]}" stroke-width="3" fill="none"/>`});
+ g+=node(10,93,140,t('n_an'),`${Object.keys(L).length} · ${t('n_an2')}`,anyAl?'var(--cal)':'var(--ok)')+node(210,93,150,t('n_dl'),t('n_dl2'),ok?'var(--ok)':'var(--al)')+node(410,93,130,t('n_net'),t('n_net2'),C[net]);
+ D.forEach((d,i)=>g+=node(600,ys[i],150,d.name,`${d.protocol.toUpperCase()} · ${t('d_sent')} ${d.sent} · ${t('d_pend')} ${d.pending}`.slice(0,30),C[dstate(d)]));
+ $('#sch').innerHTML=g;}
+function dests(){if(!S)return;$('#dests').innerHTML=`<tr><th>${t('d_name')}</th><th class=hidem>${t('d_proto')}</th><th class=hidem>${t('d_host')}</th><th>${t('d_sent')}</th><th>${t('d_pend')}</th><th>${t('d_last')}</th></tr>`+S.destinations.map(d=>`<tr><td><span class="st" style="--c:${{ok:'var(--ok)',warn:'var(--cal)',off:'var(--al)'}[dstate(d)]}"></span> ${d.name}</td><td class=hidem>${d.protocol.toUpperCase()}</td><td class="hidem mono">${d.host}</td><td class="ok mono">${d.sent}</td><td class="mono ${d.pending?'warn':''}">${d.pending}</td><td class=mono>${fmt(d.last_success)}</td></tr>`).join('');}
+function filters(){const mk=(id,opts,cur,set)=>{$(id).innerHTML=opts.map(o=>`<button class="chip ${o===cur?'on':''}" style="--k:var(--ac)" data-o="${o}">${t(o==='all'?'all':id==='#upf'?'u_'+o:o)}</button>`).join('');$$(id+' .chip').forEach(b=>b.onclick=()=>{set(b.dataset.o);filters();timeline();})};
+ mk('#upf',['all','sent','pending','failed'],upF,v=>upF=v);mk('#alf',['all','alarm','warning','info'],alF,v=>alF=v);}
+function timeline(){const u=U.filter(x=>upF==='all'||x.status===upF);$('#ups').innerHTML=u.map(x=>`<div class="ti ${x.status}"><div><span class="tag">${t('u_'+x.status)}</span> <span class="mono">${x.name}</span></div><div class="m mono">${fmt(x.sent_at||x.last_try)}</div><div class="m">→ ${x.dest} · ${x.attempts} ${t('tries')}</div><div class="m bad">${x.last_error||''}</div></div>`).join('')||`<p>${t('empty')}</p>`;
+ const a=A.filter(x=>alF==='all'||x.level===alF);$('#als').innerHTML=a.map(x=>`<div class="ti ${x.level}"><div><span class="tag">${t(x.level)}</span> <span class="m">· ${t('k_'+x.kind)}</span></div><div class="m mono">${fmt(x.ts)}</div><div style="grid-column:1/3">${msg(x.message)}</div></div>`).join('')||`<p>${t('empty')}</p>`;
+ const na=A.filter(x=>x.level==='alarm').length;$('#nal').textContent=na;$('#nal').classList.toggle('hide',!na);}
+let TD={};
+async function chart(){if(!sel.length)return;const h=$('#hrs').value;await Promise.all(sel.map(async p=>TD[p]=(await j(`/api/trend?param=${encodeURIComponent(p)}&hours=${h}`)).filter(d=>d.value!=null)));draw();}
+function draw(){const svg=$('#chart'),W=svg.clientWidth||900,H=320,ml=46,mr=14,mt=12,mb=26;const keys=Object.keys(L);
+ const ser=sel.filter(p=>TD[p]&&TD[p].length).map(p=>({p,c:COL[keys.indexOf(p)%8],d:TD[p].map(x=>({t:new Date(x.ts).getTime(),v:x.value}))}));if(!ser.length){svg.innerHTML='';return;}
+ const norm=ser.length>1;if(norm)ser.forEach(s=>{const lm=L[s.p]?.high;const m=lm||Math.max(...s.d.map(x=>Math.abs(x.v)))||1;s.d=s.d.map(x=>({t:x.t,v:x.v/m*100,r:x.v}))});else ser[0].d.forEach(x=>x.r=x.v);
+ let x0=Math.min(...ser.map(s=>s.d[0].t)),x1=Math.max(...ser.map(s=>s.d.at(-1).t));if(zoom){[x0,x1]=zoom}if(x1<=x0)x1=x0+1;
+ const vis=ser.flatMap(s=>s.d.filter(x=>x.t>=x0&&x.t<=x1).map(x=>x.v));let y0=Math.min(...vis),y1=Math.max(...vis);
+ const lims=norm?[[100,'var(--al)']]:[[L[ser[0].p]?.high,'var(--al)'],[L[ser[0].p]?.low,'var(--cal)']].filter(l=>l[0]!=null);lims.forEach(l=>{y0=Math.min(y0,l[0]);y1=Math.max(y1,l[0])});
+ const pad=(y1-y0)*.1||1;y0-=pad;y1+=pad;const X=v=>ml+(v-x0)/(x1-x0)*(W-ml-mr),Y=v=>H-mb-(v-y0)/(y1-y0)*(H-mt-mb);
+ let g=`<defs>${ser.map((s,i)=>`<linearGradient id="cg${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${s.c}" stop-opacity=".28"/><stop offset="1" stop-color="${s.c}" stop-opacity="0"/></linearGradient>`).join('')}<clipPath id="clp"><rect x="${ml}" y="0" width="${W-ml-mr}" height="${H}"/></clipPath></defs>`;
+ for(let i=0;i<=5;i++){const v=y0+(y1-y0)*i/5;g+=`<line x1=${ml} x2=${W-mr} y1=${Y(v)} y2=${Y(v)} stroke="var(--grid)"/><text x=4 y=${Y(v)+4} font-size=11>${v.toFixed(1)}${norm?'%':''}</text>`;}
+ const nt=Math.max(2,Math.min(8,Math.floor(W/120)));for(let i=0;i<=nt;i++){const v=x0+(x1-x0)*i/nt;g+=`<text x=${X(v)} y=${H-6} font-size=11 text-anchor="middle">${new Date(v).toTimeString().slice(0,5)}</text>`;}
+ lims.forEach(([v,c])=>g+=`<line x1=${ml} x2=${W-mr} y1=${Y(v)} y2=${Y(v)} stroke="${c}" stroke-dasharray="6 4" stroke-width="1.5"/><text x=${W-mr-4} y=${Y(v)-5} font-size=11 text-anchor="end" style="fill:${c}">${norm?t('norm')+' 100':t('lim')+' '+v}</text>`);
+ g+='<g clip-path="url(#clp)">';ser.forEach((s,i)=>{const pts=s.d.map(x=>X(x.t)+','+Y(x.v)).join(' ');if(!norm)g+=`<polygon fill="url(#cg${i})" points="${X(s.d[0].t)},${H-mb} ${pts} ${X(s.d.at(-1).t)},${H-mb}"/>`;g+=`<polyline fill="none" stroke="${s.c}" stroke-width="2" points="${pts}" style="filter:drop-shadow(0 0 4px ${s.c})"/>`});
+ g+=`</g><line id="cx" y1=${mt} y2=${H-mb} stroke="var(--mu)" stroke-dasharray="3 3" class="hide"/><rect id="zr" y=${mt} height=${H-mt-mb} fill="var(--ac)" opacity=".15" class="hide"/>`;svg.innerHTML=g;
+ let drag=null;const px=e=>{const r=svg.getBoundingClientRect();return Math.max(ml,Math.min(W-mr,e.clientX-r.left))},inv=x=>x0+(x-ml)/(W-ml-mr)*(x1-x0);
+ svg.onmousedown=e=>drag=px(e);svg.ondblclick=()=>{zoom=null;draw()};
+ svg.onmousemove=e=>{const x=px(e),tt=inv(x),cx=$('#cx');cx.setAttribute('x1',x);cx.setAttribute('x2',x);cx.classList.remove('hide');
+  if(drag!=null){const z=$('#zr');z.setAttribute('x',Math.min(drag,x));z.setAttribute('width',Math.abs(x-drag));z.classList.remove('hide');}
+  const tip=$('#tip');tip.innerHTML=`<div class="mono" style="color:var(--mu)">${new Date(tt).toTimeString().slice(0,8)}</div>`+ser.map(s=>{let b=s.d[0];for(const q of s.d)if(Math.abs(q.t-tt)<Math.abs(b.t-tt))b=q;return`<div><span style="color:${s.c}">●</span> ${s.p}: <b class="mono">${b.r.toFixed(2)}</b> ${L[s.p]?.unit||''}</div>`}).join('');
+  tip.classList.remove('hide');tip.style.left=Math.min(innerWidth-180,e.clientX+14)+'px';tip.style.top=(e.clientY+14)+'px';};
+ svg.onmouseleave=()=>{$('#tip').classList.add('hide');$('#cx')?.classList.add('hide');drag=null;$('#zr')?.classList.add('hide')};
+ svg.onmouseup=e=>{const x=px(e);if(drag!=null&&Math.abs(x-drag)>8){zoom=[inv(Math.min(drag,x)),inv(Math.max(drag,x))];drag=null;draw();}drag=null;};}
+$('#hrs').onchange=()=>{zoom=null;chart()};addEventListener('resize',()=>draw());
+async function sparks(){await Promise.all(Object.keys(L).map(async p=>{try{SP[p]=(await j(`/api/trend?param=${encodeURIComponent(p)}&hours=1`)).filter(d=>d.value!=null).slice(-60)}catch(e){}}));render();}
 let first=true;
-async function live(){const L=await j('/api/live');let h='';for(const[p,d]of Object.entries(L)){
- const ex=d.value!=null&&((d.high!=null&&d.value>d.high)||(d.low!=null&&d.value<d.low));
- const c=d.status==='02'?'fault':d.status==='01'?'cal':ex?'alarm':'';
- h+=`<div class="card ${c}" onclick="pick('${p}')"><div class="p">${d.name} (${p})</div><div class="v">${d.value==null?'—':d.value.toFixed(2)} <span class="u">${d.unit}</span></div>
- <div class="s">${ST[d.status]} ${ex?'<span class=bad>· VƯỢT NGƯỠNG</span>':''} ${d.high!=null?'· Ngưỡng '+(d.low!=null?d.low+'–':'≤')+d.high:''}</div></div>`;}
- $('#cards').innerHTML=h||'<p>Đang chờ dữ liệu…</p>';
- if(first&&Object.keys(L).length){$('#sel').innerHTML=Object.keys(L).map(p=>`<option>${p}</option>`).join('');first=false;chart();}}
-function pick(p){$('#sel').value=p;chart();}
-async function chart(){const p=$('#sel').value;if(!p)return;const D=(await j(`/api/trend?param=${encodeURIComponent(p)}&hours=${$('#hrs').value}`)).filter(d=>d.value!=null);
- const svg=$('#chart'),W=svg.clientWidth||900,H=260,m=40;if(!D.length){svg.innerHTML='';return;}
- const xs=D.map(d=>new Date(d.ts).getTime()),ys=D.map(d=>d.value);const x0=Math.min(...xs),x1=Math.max(...xs)||x0+1;
- let y0=Math.min(...ys),y1=Math.max(...ys);const L=(await j('/api/live'))[p]||{};if(L.high!=null)y1=Math.max(y1,L.high);if(L.low!=null)y0=Math.min(y0,L.low);const pad=(y1-y0)*.1||1;y0-=pad;y1+=pad;
- const X=t=>m+(t-x0)/((x1-x0)||1)*(W-m-10),Y=v=>H-25-(v-y0)/(y1-y0)*(H-35);
- let g='';for(let i=0;i<=4;i++){const v=y0+(y1-y0)*i/4;g+=`<line x1=${m} x2=${W-10} y1=${Y(v)} y2=${Y(v)} stroke="#eee"/><text x=2 y=${Y(v)+4} font-size=11 fill="#678">${v.toFixed(1)}</text>`;}
- for(let i=0;i<=4;i++){const t=x0+(x1-x0)*i/4;g+=`<text x=${X(t)-20} y=${H-6} font-size=11 fill="#678">${new Date(t).toTimeString().slice(0,5)}</text>`;}
- if(L.high!=null)g+=`<line x1=${m} x2=${W-10} y1=${Y(L.high)} y2=${Y(L.high)} stroke="#e63946" stroke-dasharray="6 4"/><text x=${W-90} y=${Y(L.high)-4} font-size=11 fill="#e63946">Ngưỡng ${L.high}</text>`;
- g+=`<polyline fill="none" stroke="#0b5d55" stroke-width="2" points="${D.map(d=>X(new Date(d.ts).getTime())+','+Y(d.value)).join(' ')}"/>`;svg.innerHTML=g;}
-$('#sel').onchange=chart;$('#hrs').onchange=chart;
-async function status(){const S=await j('/api/status');$('#st').textContent=`${S.station.name||''} · Tệp: ${S.station.province}_${S.station.facility}_${S.station.station}_*.txt · chu kỳ ${S.interval} phút · ${fmt(S.now)}`;
- $('#dests').innerHTML='<tr><th>Đích</th><th>Giao thức</th><th>Máy chủ</th><th>Đã gửi</th><th>Chờ gửi bù</th><th>Gửi thành công gần nhất</th></tr>'+S.destinations.map(d=>`<tr><td>${d.name}</td><td>${d.protocol.toUpperCase()}</td><td>${d.host}</td><td class=ok>${d.sent}</td><td class="${d.pending?'warn':''}">${d.pending}</td><td>${fmt(d.last_success)}</td></tr>`).join('');}
-async function ups(){const U=await j('/api/uploads');$('#ups').innerHTML='<tr><th>Tệp</th><th>Đích</th><th>Trạng thái</th><th>Số lần</th><th>Thời điểm gửi</th><th>Lỗi</th></tr>'+U.map(u=>`<tr><td>${u.name}</td><td>${u.dest}</td><td class="${u.status==='sent'?'ok':u.status==='failed'?'bad':'warn'}">${{sent:'Đã gửi',failed:'Lỗi – sẽ gửi lại',pending:'Chờ gửi'}[u.status]}</td><td>${u.attempts}</td><td>${fmt(u.sent_at||u.last_try)}</td><td>${u.last_error||''}</td></tr>`).join('');}
-async function als(){const A=await j('/api/alarms');$('#als').innerHTML='<tr><th>Thời gian</th><th>Mức</th><th>Loại</th><th>Nội dung</th></tr>'+A.map(a=>`<tr><td>${fmt(a.ts)}</td><td class="${a.level==='alarm'?'bad':a.level==='warning'?'warn':'ok'}">${{alarm:'BÁO ĐỘNG',warning:'Cảnh báo',info:'Thông tin'}[a.level]}</td><td>${a.kind}</td><td>${a.message}</td></tr>`).join('');}
-function tick(){live();status();ups();als();}tick();setInterval(tick,5000);setInterval(chart,30000);
+async function tick(){try{[L,S,U,A]=await Promise.all([j('/api/live'),j('/api/status'),j('/api/uploads'),j('/api/alarms')]);ok=true;}catch(e){ok=false;}
+ const D=S?S.destinations:[],st=!ok?'bad':D.some(d=>dstate(d)==='ok')?(D.some(d=>dstate(d)!=='ok')?'warn':''):'warn';
+ $('#conn').className='pill '+st;$('#connt').textContent=t(!ok?'offline':st?'degraded':'online');
+ if(S){$('#sname').textContent=S.station.name||S.station.station;$('#sfile').textContent=`${t('file')}: ${S.station.province}_${S.station.facility}_${S.station.station}_*.txt · ${t('every')} ${S.interval} ${t('min')}`;}
+ if(first&&Object.keys(L).length){first=false;sel=[Object.keys(L)[0]];render();sparks();chart();}else render();animate();}
+applyTheme();applyI18n();tick();setInterval(tick,5000);setInterval(()=>{chart();sparks()},30000);
 </script></body></html>
