@@ -1,2 +1,2 @@
-"""QTLink (QuanTrắc Link) - datalogger mã nguồn mở theo Thông tư 10/2021/TT-BTNMT."""
-__version__ = "0.1.0"
+"""QTLink - lightweight open-source Modbus edge datalogger with store-and-forward (FTP/sFTP, MQTT, HTTP, InfluxDB)."""
+__version__ = "0.2.0"
